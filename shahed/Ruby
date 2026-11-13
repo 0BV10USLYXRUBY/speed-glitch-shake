@@ -1,0 +1,76 @@
+-- Speed Glitch (SG) Toggle GUI Script (Walk: 16 | Jump: 70)
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+local speedEnabled = false
+local normalSpeed = 16
+local jumpSpeed = 70
+
+-- Create ScreenGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "SG_Gui"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = game:GetService("CoreGui")
+
+-- Create Draggable "SG" Button
+local sgButton = Instance.new("TextButton")
+sgButton.Name = "SGButton"
+sgButton.Size = UDim2.new(0, 60, 0, 60)
+sgButton.Position = UDim2.new(0.8, 0, 0.4, 0)
+sgButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+sgButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+sgButton.Font = Enum.Font.GothamBold
+sgButton.TextSize = 20
+sgButton.Text = "SG"
+sgButton.Draggable = true
+sgButton.Active = true
+sgButton.Parent = screenGui
+
+-- Round the button corners
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 12)
+corner.Parent = sgButton
+
+-- Monitor jumping and landing on a character
+local function setupCharacter(character)
+    local humanoid = character:WaitForChild("Humanoid", 5)
+    if not humanoid then return end
+
+    humanoid.WalkSpeed = normalSpeed
+
+    -- Detect when jumping vs landing
+    humanoid.StateChanged:Connect(function(_, newState)
+        if not speedEnabled then
+            humanoid.WalkSpeed = normalSpeed
+            return
+        end
+
+        if newState == Enum.HumanoidStateType.Jumping or newState == Enum.HumanoidStateType.Freefall then
+            humanoid.WalkSpeed = jumpSpeed
+        elseif newState == Enum.HumanoidStateType.Landed or newState == Enum.HumanoidStateType.Running then
+            humanoid.WalkSpeed = normalSpeed
+        end
+    end)
+end
+
+-- Toggle logic when tapping "SG"
+sgButton.MouseButton1Click:Connect(function()
+    speedEnabled = not speedEnabled
+
+    if speedEnabled then
+        sgButton.BackgroundColor3 = Color3.fromRGB(0, 170, 90) -- Green when ON
+    else
+        sgButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30) -- Dark gray when OFF
+        local character = LocalPlayer.Character
+        if character and character:FindFirstChild("Humanoid") then
+            character.Humanoid.WalkSpeed = normalSpeed
+        end
+    end
+end)
+
+-- Initialize on current character and any future respawns
+if LocalPlayer.Character then
+    setupCharacter(LocalPlayer.Character)
+end
+LocalPlayer.CharacterAdded:Connect(setupCharacter)
+
